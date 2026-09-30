@@ -1,4 +1,4 @@
-name: 🎯 activity range
+name: activity range
 
 on:
   schedule:
@@ -46,7 +46,7 @@ jobs:
           git add -A
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -q -m "🎯 update activity range"
+              commit -q -m "Update activity range"
           git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

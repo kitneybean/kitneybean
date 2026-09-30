@@ -15,10 +15,10 @@ README на GitHub не может выполнять JavaScript и не пол�
 
 1. **Ветка по умолчанию.** Профильный README берётся из ветки по умолчанию. Если ею стала
    ветка с этими файлами — переименуй её в `main`
-   (Settings → General → Default branch → ✏️), либо смёрджи её в `main`.
+   (Settings → General → Default branch → переименовать), либо смёрджи её в `main`.
 2. **GitHub Pages.** Settings → Pages → Build and deployment → Source: **GitHub Actions**.
    Без этого SVG в профиле всё равно работает, но ссылка на стрельбище будет 404.
-3. **Первый прогон.** Actions → «🎯 activity range» → Run workflow. После него появится ветка
+3. **Первый прогон.** Actions → «activity range» → Run workflow. После него появится ветка
    `output` с `sniper-dark.svg` / `sniper-light.svg`, а игра — на
    https://kitneybean.github.io/kitneybean/
 4. **Больше мишеней.** Большая часть репозиториев приватные — включи
@@ -27,7 +27,7 @@ README на GitHub не может выполнять JavaScript и не пол�
 
 ## Настройка
 
-- Текст шапки — прямо в `assets/header.svg` (имя, стек, строка `hunting bugs since 2020`).
+- Текст шапки — прямо в `assets/header.svg` (имя и стек).
 - Количество целей и темп стрельбы — константы `MAX_TARGETS`, `AIM`, `SETTLE` в начале
   `scripts/generate-sniper.mjs`.
 - Если GitHub отключил расписание после 60 дней без активности — Actions → workflow → Enable.

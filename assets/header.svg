@@ -7,10 +7,6 @@
   .g2{animation:g2 6s steps(1) infinite;opacity:0}
   @keyframes g1{0%,86%{opacity:0;transform:translate(0px,0px)}87%{opacity:.85;transform:translate(-4px,1px)}89%{opacity:.85;transform:translate(3px,-1px)}91%,100%{opacity:0;transform:translate(0px,0px)}}
   @keyframes g2{0%,86%{opacity:0;transform:translate(0px,0px)}87%{opacity:.85;transform:translate(4px,-1px)}89%{opacity:.85;transform:translate(-3px,2px)}91%,100%{opacity:0;transform:translate(0px,0px)}}
-  #cover{animation:type 8s steps(23) infinite}
-  @keyframes type{0%{transform:translate(0px,0px)}45%,100%{transform:translate(193px,0px)}}
-  #caret{animation:blink 1s steps(1) infinite}
-  @keyframes blink{50%{opacity:0}}
   #scan{animation:scan 5s linear infinite}
   @keyframes scan{0%{transform:translate(0px,-20px)}100%{transform:translate(0px,220px)}}
   .spin{transform-box:fill-box;transform-origin:center;animation:spin 24s linear infinite}
@@ -23,7 +19,7 @@
   .pulse{animation:pulse 1.6s ease-in-out infinite}
   @keyframes pulse{50%{opacity:.25}}
   #sweep{transform-box:view-box;transform-origin:830px 100px;animation:spin 4s linear infinite}
-  @media (prefers-reduced-motion:reduce){*{animation:none!important}.g1,.g2{opacity:0}#cover{transform:translate(193px,0px)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}.g1,.g2{opacity:0}}
 </style>
 <defs>
   <clipPath id="panel"><rect x="1" y="1" width="958" height="198" rx="12"/></clipPath>
@@ -45,21 +41,14 @@
   </g>
 
   <!-- left: identity -->
-  <rect x="44" y="52" width="3" height="104" fill="#ff4d4d"/>
-  <text x="62" y="64" font-size="12" fill="#ff4d4d" letter-spacing="2" font-weight="700">// OPERATOR PROFILE</text>
+  <rect x="44" y="48" width="3" height="104" fill="#ff4d4d"/>
+  <text x="62" y="60" font-size="12" fill="#ff4d4d" letter-spacing="2" font-weight="700">// OPERATOR PROFILE</text>
   <g>
-    <text class="name g1" x="60" y="124" fill="#ff4d4d">kitneybean</text>
-    <text class="name g2" x="60" y="124" fill="#58a6ff">kitneybean</text>
-    <text class="name" x="60" y="124" fill="url(#nameFill)">kitneybean</text>
+    <text class="name g1" x="60" y="120" fill="#ff4d4d">kitneybean</text>
+    <text class="name g2" x="60" y="120" fill="#58a6ff">kitneybean</text>
+    <text class="name" x="60" y="120" fill="url(#nameFill)">kitneybean</text>
   </g>
-  <text x="62" y="152" font-size="14" fill="#7d8590">C# · .NET · Python · JavaScript</text>
-  <g>
-    <text x="62" y="176" font-size="14" fill="#39d353">&gt; hunting bugs since 2020</text>
-    <g id="cover">
-      <rect id="caret" x="79" y="164" width="8" height="15" fill="#39d353"/>
-      <rect x="88" y="160" width="300" height="24" fill="#0d1117"/>
-    </g>
-  </g>
+  <text x="62" y="148" font-size="14" fill="#7d8590">C# · .NET · Python · JavaScript</text>
 
   <!-- right: scope -->
   <g>
