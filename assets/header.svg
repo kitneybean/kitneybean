@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 200" width="960" height="200" role="img" aria-label="kitneybean — C#, .NET, Python, JavaScript">
+<title>kitneybean</title>
+<style>
+  text{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace}
+  .name{font-family:'Segoe UI',Ubuntu,'Helvetica Neue',Arial,sans-serif;font-weight:800;font-size:62px;letter-spacing:-1px}
+  .g1{animation:g1 6s steps(1) infinite;opacity:0}
+  .g2{animation:g2 6s steps(1) infinite;opacity:0}
+  @keyframes g1{0%,86%{opacity:0;transform:translate(0px,0px)}87%{opacity:.85;transform:translate(-4px,1px)}89%{opacity:.85;transform:translate(3px,-1px)}91%,100%{opacity:0;transform:translate(0px,0px)}}
+  @keyframes g2{0%,86%{opacity:0;transform:translate(0px,0px)}87%{opacity:.85;transform:translate(4px,-1px)}89%{opacity:.85;transform:translate(-3px,2px)}91%,100%{opacity:0;transform:translate(0px,0px)}}
+  #cover{animation:type 8s steps(23) infinite}
+  @keyframes type{0%{transform:translate(0px,0px)}45%,100%{transform:translate(193px,0px)}}
+  #caret{animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  #scan{animation:scan 5s linear infinite}
+  @keyframes scan{0%{transform:translate(0px,-20px)}100%{transform:translate(0px,220px)}}
+  .spin{transform-box:fill-box;transform-origin:center;animation:spin 24s linear infinite}
+  .spin.rev{animation-duration:14s;animation-direction:reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #brackets{transform-box:fill-box;transform-origin:center;animation:lock 4s ease-in-out infinite}
+  @keyframes lock{0%,15%{transform:scale(1.35);opacity:0}35%{transform:scale(1);opacity:1}85%{transform:scale(1);opacity:1}100%{transform:scale(1.35);opacity:0}}
+  #locked{animation:locked 4s steps(1) infinite}
+  @keyframes locked{0%,34%{opacity:0}35%,85%{opacity:1}86%,100%{opacity:0}}
+  .pulse{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  #sweep{transform-box:view-box;transform-origin:830px 100px;animation:spin 4s linear infinite}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}.g1,.g2{opacity:0}#cover{transform:translate(193px,0px)}}
+</style>
+<defs>
+  <clipPath id="panel"><rect x="1" y="1" width="958" height="198" rx="12"/></clipPath>
+  <pattern id="dots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e6edf3" opacity=".07"/></pattern>
+  <linearGradient id="nameFill" x1="0" x2="1"><stop offset="0" stop-color="#e6edf3"/><stop offset=".6" stop-color="#e6edf3"/><stop offset="1" stop-color="#39d353"/></linearGradient>
+  <linearGradient id="scanFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#39d353" stop-opacity="0"/><stop offset="1" stop-color="#39d353" stop-opacity=".12"/></linearGradient>
+  <linearGradient id="sweepFill" x1="0" x2="1"><stop offset="0" stop-color="#ff4d4d" stop-opacity="0"/><stop offset="1" stop-color="#ff4d4d" stop-opacity=".22"/></linearGradient>
+  <clipPath id="radar"><circle cx="830" cy="100" r="56"/></clipPath>
+</defs>
+
+<rect x=".5" y=".5" width="959" height="199" rx="12" fill="#0d1117" stroke="#30363d"/>
+<g clip-path="url(#panel)">
+  <rect width="960" height="200" fill="url(#dots)"/>
+  <g id="scan"><rect width="960" height="18" fill="url(#scanFill)"/><rect y="18" width="960" height="1" fill="#39d353" opacity=".25"/></g>
+
+  <!-- corners -->
+  <g fill="none" stroke="#ff4d4d" stroke-width="1.5" opacity=".7">
+    <path d="M14,26V14H26"/><path d="M946,26V14H934"/><path d="M14,174V186H26"/><path d="M946,174V186H934"/>
+  </g>
+
+  <!-- left: identity -->
+  <rect x="44" y="52" width="3" height="104" fill="#ff4d4d"/>
+  <text x="62" y="64" font-size="12" fill="#ff4d4d" letter-spacing="2" font-weight="700">// OPERATOR PROFILE</text>
+  <g>
+    <text class="name g1" x="60" y="124" fill="#ff4d4d">kitneybean</text>
+    <text class="name g2" x="60" y="124" fill="#58a6ff">kitneybean</text>
+    <text class="name" x="60" y="124" fill="url(#nameFill)">kitneybean</text>
+  </g>
+  <text x="62" y="152" font-size="14" fill="#7d8590">C# · .NET · Python · JavaScript</text>
+  <g>
+    <text x="62" y="176" font-size="14" fill="#39d353">&gt; hunting bugs since 2020</text>
+    <g id="cover">
+      <rect id="caret" x="79" y="164" width="8" height="15" fill="#39d353"/>
+      <rect x="88" y="160" width="300" height="24" fill="#0d1117"/>
+    </g>
+  </g>
+
+  <!-- right: scope -->
+  <g>
+    <g clip-path="url(#radar)">
+      <circle cx="830" cy="100" r="56" fill="#010409"/>
+      <!-- a tiny contribution graph under the crosshair -->
+      <g transform="translate(790 64)">
+        <rect x="0" y="0" width="12" height="12" rx="2" fill="#0e4429"/><rect x="16" y="0" width="12" height="12" rx="2" fill="#161b22"/><rect x="32" y="0" width="12" height="12" rx="2" fill="#26a641"/><rect x="48" y="0" width="12" height="12" rx="2" fill="#006d32"/><rect x="64" y="0" width="12" height="12" rx="2" fill="#161b22"/>
+        <rect x="0" y="16" width="12" height="12" rx="2" fill="#161b22"/><rect x="16" y="16" width="12" height="12" rx="2" fill="#39d353"/><rect x="32" y="16" width="12" height="12" rx="2" fill="#006d32"/><rect x="48" y="16" width="12" height="12" rx="2" fill="#161b22"/><rect x="64" y="16" width="12" height="12" rx="2" fill="#0e4429"/>
+        <rect x="0" y="32" width="12" height="12" rx="2" fill="#26a641"/><rect x="16" y="32" width="12" height="12" rx="2" fill="#0e4429"/><rect x="32" y="32" width="12" height="12" rx="2" fill="#39d353"/><rect x="48" y="32" width="12" height="12" rx="2" fill="#26a641"/><rect x="64" y="32" width="12" height="12" rx="2" fill="#161b22"/>
+        <rect x="0" y="48" width="12" height="12" rx="2" fill="#161b22"/><rect x="16" y="48" width="12" height="12" rx="2" fill="#006d32"/><rect x="32" y="48" width="12" height="12" rx="2" fill="#161b22"/><rect x="48" y="48" width="12" height="12" rx="2" fill="#39d353"/><rect x="64" y="48" width="12" height="12" rx="2" fill="#006d32"/>
+        <rect x="0" y="64" width="12" height="12" rx="2" fill="#0e4429"/><rect x="16" y="64" width="12" height="12" rx="2" fill="#26a641"/><rect x="32" y="64" width="12" height="12" rx="2" fill="#0e4429"/><rect x="48" y="64" width="12" height="12" rx="2" fill="#161b22"/><rect x="64" y="64" width="12" height="12" rx="2" fill="#26a641"/>
+      </g>
+      <path id="sweep" d="M830,100L886,100A56,56 0 0 0 869.6,60.4Z" fill="url(#sweepFill)"/>
+    </g>
+    <circle cx="830" cy="100" r="58" fill="none" stroke="#484f58" stroke-width="4"/>
+    <circle class="spin" cx="830" cy="100" r="70" fill="none" stroke="#30363d" stroke-width="1.5" stroke-dasharray="3 9"/>
+    <circle class="spin rev" cx="830" cy="100" r="78" fill="none" stroke="#ff4d4d" stroke-width="1" stroke-dasharray="24 30" opacity=".5"/>
+    <path d="M772,100H802M858,100H888M830,42V72M830,128V158" stroke="#c9d1d9" stroke-width="3" opacity=".85"/>
+    <path d="M802,100H826M834,100H858M830,72V96M830,104V128" stroke="#ff4d4d" stroke-width="1"/>
+    <circle cx="830" cy="100" r="3.5" fill="#ff4d4d" opacity=".3"/><circle cx="830" cy="100" r="1.6" fill="#ff4d4d"/>
+    <g id="brackets" fill="none" stroke="#ff4d4d" stroke-width="2">
+      <path d="M800,78V70H808M860,78V70H852M800,122V130H808M860,122V130H852"/>
+    </g>
+  </g>
+
+  <!-- status -->
+  <g font-size="11" letter-spacing="1.5">
+    <circle class="pulse" cx="508" cy="30" r="3.5" fill="#ff4d4d"/>
+    <text x="518" y="34" fill="#7d8590">STATUS:</text>
+    <text id="locked" x="578" y="34" fill="#ff4d4d" font-weight="700">TARGET LOCKED</text>
+    <text x="508" y="182" fill="#484f58">RNG 1337m · WIND 2.4 ◂</text>
+  </g>
+</g>
+</svg>
