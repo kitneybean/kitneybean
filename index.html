@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Activity Range</title>
+<meta name="description" content="Расстреляй граф активности GitHub из снайперской винтовки. Shoot down a GitHub contribution graph with a sniper rifle.">
+<meta name="theme-color" content="#0d1117">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23ff4d4d' stroke-width='3'/%3E%3Cpath d='M16 1v9M16 22v9M1 16h9M22 16h9' stroke='%23ff4d4d' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0d1117; --panel: rgba(22, 27, 34, 0.9); --border: #30363d; --text: #e6edf3; --muted: #7d8590;
+    --accent: #ff4d4d; --green: #39d353; --gold: #ffd27a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    font: 13px/1.45 ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: none; touch-action: none; }
+
+  .hud { position: fixed; left: 0; right: 0; display: flex; justify-content: space-between; gap: 16px; padding: 14px 18px; pointer-events: none; }
+  .hud.top { top: 0; align-items: flex-start; }
+  .hud.bottom { bottom: 0; align-items: flex-end; }
+  .col { display: flex; flex-direction: column; gap: 5px; }
+  .col.end { align-items: flex-end; text-align: right; }
+  .tag { color: var(--accent); font-weight: 700; letter-spacing: .08em; }
+  .muted { color: var(--muted); }
+  .big { font-size: 24px; font-weight: 700; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+  .combo { color: var(--gold); font-size: 14px; }
+  .ammo { display: flex; gap: 5px; align-items: flex-end; height: 22px; }
+  .ammo i { width: 7px; height: 22px; border-radius: 4px 4px 1px 1px; background: linear-gradient(90deg, #8a6a1c, #ffe7a3 40%, #d4a73c 70%, #8a6a1c); }
+  .ammo i.spent { background: #21262d; }
+  .ammo em { font-style: normal; color: var(--gold); margin-left: 8px; letter-spacing: .1em; }
+  .breath { width: 150px; height: 5px; border-radius: 3px; background: #21262d; overflow: hidden; }
+  .breath b { display: block; height: 100%; width: 100%; background: var(--green); transform-origin: left; }
+  .breath.tired b { background: var(--accent); }
+  .hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); color: var(--muted); pointer-events: none; transition: opacity .6s; white-space: nowrap; }
+
+  .screen { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; padding: 16px; background: rgba(1, 4, 9, .66); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+  .screen[hidden] { display: none; }
+  .card { width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 26px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 24px 80px rgba(0, 0, 0, .55); }
+  .card h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: .08em; }
+  .card h1 span { color: var(--accent); }
+  .card p { margin: 0; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; margin: 20px 0; align-items: center; }
+  kbd { display: inline-block; min-width: 26px; padding: 1px 7px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; background: #161b22; font: inherit; font-size: 12px; text-align: center; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { appearance: none; padding: 10px 18px; border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; letter-spacing: .1em; cursor: pointer; text-decoration: none; }
+  .btn:hover { filter: brightness(1.1); }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .btn.ghost { background: transparent; color: var(--text); border-color: var(--border); }
+  .user { display: flex; gap: 8px; margin-top: 18px; }
+  .user input { flex: 1; min-width: 0; padding: 9px 11px; background: #010409; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font: inherit; }
+  .user input:focus { outline: 1px solid var(--accent); }
+  .note { margin-top: 12px; color: var(--gold); }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; }
+  .stat { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
+  .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .stat.best b { color: var(--gold); }
+  a { color: var(--text); }
+  @media (max-width: 640px) {
+    .hud { padding: 10px 12px; }
+    .big { font-size: 19px; }
+    .wide { display: none; }
+    .card { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Contribution graph shooting range"></canvas>
+
+<div class="hud top">
+  <div class="col">
+    <div class="tag">◉ <span id="who">@kitneybean</span></div>
+    <div class="muted" id="intel"></div>
+  </div>
+  <div class="col end">
+    <div><span class="big" id="score">0</span> <span class="combo" id="combo"></span></div>
+    <div class="muted"><span id="left"></span> · <span id="acc"></span> · <span id="time">00:00</span></div>
+  </div>
+</div>
+
+<div class="hud bottom">
+  <div class="col">
+    <div class="ammo" id="ammo"></div>
+    <div class="breath" id="breath"><b></b></div>
+    <div class="muted wide" id="breathLabel"></div>
+  </div>
+</div>
+<div class="hint" id="hint"></div>
+
+<div class="screen" id="start">
+  <div class="card">
+    <h1><span>◎</span> ACTIVITY RANGE</h1>
+    <p class="muted" id="subtitle"></p>
+    <div class="keys" id="keys"></div>
+    <div class="row">
+      <button class="btn" id="go" disabled></button>
+      <span class="muted" id="status"></span>
+    </div>
+    <p class="note" id="note" hidden></p>
+    <form class="user" id="userForm">
+      <input id="userInput" name="user" autocomplete="off" spellcheck="false" maxlength="39">
+      <button class="btn ghost" type="submit">→</button>
+    </form>
+  </div>
+</div>
+
+<div class="screen" id="end" hidden>
+  <div class="card">
+    <h1 id="endTitle"></h1>
+    <p class="muted" id="endSub"></p>
+    <div class="stats" id="stats"></div>
+    <div class="row">
+      <button class="btn" id="again"></button>
+      <a class="btn ghost" id="profile" target="_blank" rel="noopener"></a>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ------------------------------------------------------------ strings ---
+  const LANG = (navigator.language || 'en').toLowerCase().startsWith('ru') ? 'ru' : 'en';
+  const ruPlural = (n, one, few, many) => {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+  };
+  const STR = {
+    ru: {
+      subtitle: 'Граф активности GitHub. Теперь это мишени.',
+      keys: [['Мышь', 'прицел'], ['ЛКМ', 'выстрел'], ['Колесо / ПКМ', 'зум прицела'], ['Shift', 'задержать дыхание'], ['R', 'перезарядка'], ['M', 'звук вкл/выкл']],
+      keysTouch: [['Тап', 'выстрел в точку'], ['Два пальца', 'зум прицела']],
+      go: 'В БОЙ', loading: 'загружаю разведданные…',
+      demo: 'Реальные данные недоступны — стреляем по демо-графу.',
+      userPh: 'другой ник на GitHub',
+      intel: (n, total) => `${n} ${ruPlural(n, 'цель', 'цели', 'целей')} · ${total.toLocaleString('ru')} ${ruPlural(total, 'вклад', 'вклада', 'вкладов')} за год`,
+      left: (n) => `ЦЕЛИ ${n}`, acc: (p) => `ТОЧН ${p}%`,
+      breath: 'Shift — задержать дыхание',
+      hint: 'Прицел гуляет от дыхания — зажми Shift, чтобы замереть',
+      hintTouch: 'Тапай по клеткам',
+      miss: 'МИМО', armor: 'БРОНЯ', reload: 'ПЕРЕЗАРЯДКА',
+      tip: (n, date) => n ? `${n} ${ruPlural(n, 'вклад', 'вклада', 'вкладов')} · ${date}` : `пусто · ${date}`,
+      endTitle: 'АКТИВНОСТЬ НЕЙТРАЛИЗОВАНА',
+      endSub: (user) => `Все клетки @${user} уничтожены.`,
+      stats: ['Счёт', 'Время', 'Точность', 'Рекорд'],
+      again: 'ЕЩЁ РАЗ', profile: 'ПРОФИЛЬ', newBest: 'новый рекорд!',
+    },
+    en: {
+      subtitle: 'A GitHub contribution graph. Now it is a target range.',
+      keys: [['Mouse', 'aim'], ['LMB', 'fire'], ['Wheel / RMB', 'scope zoom'], ['Shift', 'hold breath'], ['R', 'reload'], ['M', 'sound on/off']],
+      keysTouch: [['Tap', 'fire at the spot'], ['Two fingers', 'scope zoom']],
+      go: 'ENGAGE', loading: 'loading intel…',
+      demo: 'Real data is unavailable — shooting at a demo graph.',
+      userPh: 'another GitHub username',
+      intel: (n, total) => `${n} target${n === 1 ? '' : 's'} · ${total.toLocaleString('en')} contributions this year`,
+      left: (n) => `LEFT ${n}`, acc: (p) => `ACC ${p}%`,
+      breath: 'Shift — hold breath',
+      hint: 'Your breathing sways the scope — hold Shift to steady it',
+      hintTouch: 'Tap the cells',
+      miss: 'MISS', armor: 'ARMOR', reload: 'RELOADING',
+      tip: (n, date) => n ? `${n} contribution${n === 1 ? '' : 's'} · ${date}` : `nothing · ${date}`,
+      endTitle: 'ACTIVITY NEUTRALIZED',
+      endSub: (user) => `Every cell of @${user} is down.`,
+      stats: ['Score', 'Time', 'Accuracy', 'Best'],
+      again: 'AGAIN', profile: 'PROFILE', newBest: 'new record!',
+    },
+  }[LANG];
+
+  // ------------------------------------------------------------- config ---
+  const OWNER = 'kitneybean';
+  const LEVEL_COLORS = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
+  const POINTS = [0, 10, 20, 35, 50];
+  const MAG = 5;
+  const BOLT_TIME = 0.6;
+  const RELOAD_TIME = 1.6;
+  const TAU = Math.PI * 2;
+  const COARSE = matchMedia('(pointer: coarse)').matches;
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
+  };
+
+  // --------------------------------------------------------------- data ---
+  const params = new URLSearchParams(location.search);
+  const USER_RE = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
+  const requested = (params.get('user') || '').trim().replace(/^@/, '');
+  const wantedUser = USER_RE.test(requested) ? requested : OWNER;
+
+  async function getJSON(url) {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  function demoDays() {
+    const end = new Date();
+    end.setUTCHours(0, 0, 0, 0);
+    const days = [];
+    for (let i = 364; i >= 0; i--) {
+      const busy = Math.sin(i / 23) * 0.8 + Math.random() * 1.7 - 0.5;
+      const level = busy < 0.35 ? 0 : Math.min(4, Math.ceil(busy * 1.7));
+      days.push({
+        date: new Date(end.getTime() - i * 864e5).toISOString().slice(0, 10),
+        count: level ? level * 3 + Math.floor(Math.random() * 3) : 0,
+        level,
+      });
+    }
+    return days;
+  }
+
+  async function loadIntel() {
+    const sum = (days) => days.reduce((s, d) => s + d.count, 0);
+    if (wantedUser.toLowerCase() === OWNER) {
+      try {
+        const d = await getJSON('contributions.json');
+        if (d.days?.length) return { user: d.user || OWNER, total: d.total ?? sum(d.days), days: d.days, demo: d.source === 'demo' };
+      } catch { /* not deployed yet / opened from disk */ }
+    }
+    try {
+      const d = await getJSON(`https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(wantedUser)}?y=last`);
+      if (d.contributions?.length) return { user: wantedUser, total: d.total?.lastYear ?? sum(d.contributions), days: d.contributions, demo: false };
+    } catch { /* offline or rate limited */ }
+    const days = demoDays();
+    return { user: wantedUser, total: sum(days), days, demo: true };
+  }
+
+  // -------------------------------------------------------------- canvas ---
+  const cv = $('game');
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, DPR = 1;
+  const grid = { x: 0, y: 0, stride: 14, size: 11, cols: 53, vertical: false, w: 0, h: 0 };
+  let dotsLayer = null;
+
+  const intel = { user: wantedUser, total: 0, days: [], demo: false };
+  let cells = [];
+  let cellMap = [];
+  let monthMarks = [];
+  let dayFmt = null;
+
+  const state = {
+    phase: 'menu', // menu | play | over
+    score: 0, shots: 0, hits: 0, combo: 0, alive: 0, targets: 0, elapsed: 0,
+    ammo: MAG, bolt: 0, reload: 0, ejected: true,
+    zoom: 2.2, breath: 1, tired: 0, swayAmp: 1, holding: false,
+    kick: 0, muzzle: 0, shake: 0, flash: 0, hitmarker: 0, hitKill: false,
+  };
+  const aim = { mx: 0, my: 0, x: 0, y: 0, sx: 0, sy: 0, rx: 0, ry: 0, vx: 0, vy: 0, seen: false };
+  const particles = [];
+  const floaters = [];
+  const decals = [];
+  const tracers = [];
+
+  function resize() {
+    W = innerWidth;
+    H = innerHeight;
+    DPR = Math.min(devicePixelRatio || 1, 2);
+    cv.width = Math.round(W * DPR);
+    cv.height = Math.round(H * DPR);
+    if (!aim.seen) { aim.mx = aim.x = W * 0.5; aim.my = aim.y = H * 0.42; }
+    layout();
+    dotsLayer = document.createElement('canvas');
+    dotsLayer.width = cv.width;
+    dotsLayer.height = cv.height;
+    const d = dotsLayer.getContext('2d');
+    d.scale(DPR, DPR);
+    d.fillStyle = 'rgba(230,237,243,0.06)';
+    for (let x = 12; x < W; x += 24) for (let y = 12; y < H; y += 24) d.fillRect(x, y, 1.2, 1.2);
+  }
+
+  function layout() {
+    grid.cols = cells.length ? cells[cells.length - 1].col + 1 : 53;
+    grid.vertical = H > W * 1.15 && W < 720;
+    const along = grid.cols + 2;
+    let stride = grid.vertical
+      ? Math.min((W - 90) / 7.5, (H * 0.7) / along)
+      : Math.min((Math.min(W, 1400) - 90) / along, (H * 0.5) / 8);
+    stride = clamp(Math.floor(stride), 6, 30);
+    grid.stride = stride;
+    grid.size = Math.max(4, Math.round(stride * 0.78));
+    const span = (n) => n * stride - (stride - grid.size);
+    grid.w = grid.vertical ? span(7) : span(grid.cols);
+    grid.h = grid.vertical ? span(grid.cols) : span(7);
+    grid.x = Math.round((W - grid.w) / 2 + (grid.vertical ? stride : stride * 0.8));
+    grid.y = Math.round((grid.vertical ? H * 0.5 : H * 0.45) - grid.h / 2 + (grid.vertical ? stride * 0.6 : 0));
+  }
+
+  function cellPos(c) {
+    return grid.vertical
+      ? { x: grid.x + c.row * grid.stride, y: grid.y + c.col * grid.stride }
+      : { x: grid.x + c.col * grid.stride, y: grid.y + c.row * grid.stride };
+  }
+
+  function cellAt(px, py) {
+    const gx = (px - grid.x) / grid.stride;
+    const gy = (py - grid.y) / grid.stride;
+    const i = Math.floor(gx), j = Math.floor(gy);
+    if ((gx - i) * grid.stride > grid.size || (gy - j) * grid.stride > grid.size) return null;
+    const [col, row] = grid.vertical ? [j, i] : [i, j];
+    if (row < 0 || row > 6 || col < 0) return null;
+    return cellMap[col * 7 + row] || null;
+  }
+
+  function buildCells() {
+    const days = [...intel.days].sort((a, b) => a.date.localeCompare(b.date));
+    const offset = new Date(`${days[0].date}T00:00:00Z`).getUTCDay();
+    const monthFmt = new Intl.DateTimeFormat(LANG, { month: 'short', timeZone: 'UTC' });
+    dayFmt = new Intl.DateTimeFormat(LANG, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    cellMap = [];
+    const marks = [];
+    cells = days.map((d, i) => {
+      const col = Math.floor((i + offset) / 7);
+      const row = (i + offset) % 7;
+      const level = clamp(d.level | 0, 0, 4);
+      const hp = level >= 3 ? 2 : 1;
+      const date = new Date(`${d.date}T00:00:00Z`);
+      if (row === 0 || i === 0) {
+        const month = date.getUTCMonth();
+        if (marks.at(-1)?.month !== month) marks.push({ col, month, label: monthFmt.format(date).replace('.', '') });
+      }
+      const cell = { ...d, level, col, row, hp, maxHp: hp, dead: false, heat: 0, flash: 0, hole: null, cracks: null, dateLabel: dayFmt.format(date) };
+      cellMap[col * 7 + row] = cell;
+      return cell;
+    });
+    const cols = cells[cells.length - 1].col + 1;
+    // a month squeezed into < 3 columns gives way to the next one, like on GitHub
+    monthMarks = marks.filter((m, i) => (marks[i + 1]?.col ?? cols) - m.col >= 3);
+    state.targets = state.alive = cells.filter((c) => c.level > 0).length;
+    layout();
+  }
+
+  // --------------------------------------------------------------- audio ---
+  const sfx = (() => {
+    let ac = null, master = null, noise = null;
+    let muted = store.get('range.muted') === '1';
+    function audio() {
+      if (!ac) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ac = new AC();
+        const comp = ac.createDynamicsCompressor();
+        master = ac.createGain();
+        master.gain.value = 0.6;
+        master.connect(comp).connect(ac.destination);
+        noise = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+        const ch = noise.getChannelData(0);
+        for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+      }
+      if (ac.state === 'suspended') ac.resume();
+      return ac;
+    }
+    function burst({ t = 0, dur = 0.2, type = 'lowpass', f0 = 3000, f1 = f0, q = 0.7, vol = 0.5 }) {
+      const a = audio();
+      if (!a || muted) return;
+      const t0 = a.currentTime + t;
+      const src = a.createBufferSource();
+      src.buffer = noise;
+      const flt = a.createBiquadFilter();
+      flt.type = type;
+      flt.Q.value = q;
+      flt.frequency.setValueAtTime(f0, t0);
+      flt.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t0 + dur);
+      const g = a.createGain();
+      g.gain.setValueAtTime(vol, t0);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+      src.connect(flt).connect(g).connect(master);
+      src.start(t0, Math.random() * 0.5);
+      src.stop(t0 + dur + 0.05);
+    }
+    function tone({ t = 0, dur = 0.15, f0 = 440, f1 = f0, type = 'sine', vol = 0.3 }) {
+      const a = audio();
+      if (!a || muted) return;
+      const t0 = a.currentTime + t;
+      const osc = a.createOscillator();
+      osc.type = type;
+      osc.frequency.setValueAtTime(f0, t0);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+      const g = a.createGain();
+      g.gain.setValueAtTime(vol, t0);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+      osc.connect(g).connect(master);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+    }
+    const click = (t, f, vol = 0.3) => burst({ t, dur: 0.04, type: 'bandpass', f0: f, q: 4, vol });
+    function bolt(t = 0) { click(t, 2600, 0.35); click(t + 0.12, 1500); click(t + 0.27, 1900); click(t + 0.37, 3200, 0.35); }
+    return {
+      unlock: audio,
+      get muted() { return muted; },
+      toggle() { muted = !muted; store.set('range.muted', muted ? '1' : '0'); return muted; },
+      shot() {
+        burst({ dur: 0.5, f0: 8000, f1: 160, vol: 0.9 });
+        burst({ dur: 0.08, type: 'highpass', f0: 2500, vol: 0.55 });
+        tone({ dur: 0.24, f0: 150, f1: 36, vol: 0.9 });
+        burst({ t: 0.07, dur: 1.3, type: 'bandpass', f0: 520, f1: 110, q: 0.6, vol: 0.14 });
+      },
+      bolt,
+      hit(level) {
+        burst({ dur: 0.28, type: 'bandpass', f0: 900 + level * 160, f1: 180, q: 1.3, vol: 0.5 });
+        tone({ dur: 0.12, f0: 700 + level * 140, f1: 380, type: 'triangle', vol: 0.12 });
+      },
+      armor() { tone({ dur: 0.35, f0: 1900, f1: 1650, type: 'square', vol: 0.05 }); burst({ dur: 0.07, type: 'highpass', f0: 4000, vol: 0.35 }); },
+      miss() { tone({ t: 0.03, dur: 0.4, f0: 2600, f1: 800, vol: 0.07 }); burst({ dur: 0.12, type: 'bandpass', f0: 600, q: 1, vol: 0.25 }); },
+      dry() { click(0, 3600, 0.35); },
+      reload() { click(0, 1100, 0.4); burst({ t: 0.6, dur: 0.09, type: 'bandpass', f0: 750, q: 2, vol: 0.5 }); bolt(0.95); },
+      tink() { tone({ dur: 0.2, f0: 3300, f1: 3000, type: 'triangle', vol: 0.05 }); tone({ t: 0.1, dur: 0.14, f0: 3100, type: 'triangle', vol: 0.03 }); },
+      win() { [523, 659, 784, 1047].forEach((f, i) => tone({ t: i * 0.11, dur: 0.35, f0: f, type: 'triangle', vol: 0.12 })); },
+    };
+  })();
+
+  // ---------------------------------------------------------------- HUD ---
+  const hud = { score: $('score'), combo: $('combo'), left: $('left'), acc: $('acc'), time: $('time'), ammo: $('ammo'), breath: $('breath'), hint: $('hint') };
+  const pad = (n) => String(n).padStart(2, '0');
+  const fmtTime = (s) => `${pad(Math.floor(s / 60))}:${pad(Math.floor(s % 60))}`;
+  const accuracy = () => (state.shots ? Math.round((state.hits / state.shots) * 100) : 100);
+
+  function renderHud() {
+    hud.score.textContent = state.score.toLocaleString(LANG);
+    hud.combo.textContent = state.combo > 1 ? `×${Math.min(5, state.combo)}` : '';
+    hud.left.textContent = STR.left(state.alive);
+    hud.acc.textContent = STR.acc(accuracy());
+    let html = '';
+    for (let i = 0; i < MAG; i++) html += `<i class="${i < state.ammo ? '' : 'spent'}"></i>`;
+    if (state.reload > 0) html += `<em>${STR.reload}</em>`;
+    hud.ammo.innerHTML = html;
+  }
+
+  // ------------------------------------------------------------ gameplay ---
+  function aimPoint() {
+    return { x: aim.x + aim.sx + aim.rx, y: aim.y + aim.sy + aim.ry };
+  }
+
+  function fire() {
+    if (state.phase !== 'play') return;
+    if (state.reload > 0 || state.bolt > 0) { sfx.dry(); return; }
+    if (state.ammo <= 0) { startReload(); return; }
+    const P = aimPoint();
+    state.ammo--;
+    state.shots++;
+    state.bolt = BOLT_TIME;
+    state.ejected = false;
+    state.kick = 1;
+    state.muzzle = 0.07;
+    state.flash = 0.12;
+    state.shake = REDUCED ? 0 : 7;
+    aim.vy -= grid.stride * 42;
+    aim.vx += rand(-1, 1) * grid.stride * 10;
+    const m = gunGeometry().muzzle;
+    tracers.push({ x1: m.x, y1: m.y, x2: P.x, y2: P.y, life: 0.1 });
+    sfx.shot();
+    sfx.bolt(0.2);
+    resolveHit(P);
+    renderHud();
+  }
+
+  function startReload() {
+    if (state.reload > 0 || state.ammo === MAG || state.phase !== 'play') return;
+    state.reload = RELOAD_TIME;
+    sfx.reload();
+    renderHud();
+  }
+
+  function resolveHit(P) {
+    const cell = cellAt(P.x, P.y);
+    const pos = cell && cellPos(cell);
+    if (cell && !cell.dead && cell.level > 0) {
+      state.hits++;
+      cell.hp--;
+      cell.flash = 1;
+      const hole = { x: (P.x - pos.x) / grid.size, y: (P.y - pos.y) / grid.size };
+      if (cell.hp > 0) {
+        cell.cracks = makeCracks(hole);
+        cell.hole = hole;
+        state.score += 5;
+        floaters.push({ x: P.x, y: P.y - 10, text: STR.armor, color: '#8b949e', life: 0.9 });
+        burstParticles(P, '#ffd27a', 10, 'spark');
+        sfx.armor();
+        return;
+      }
+      cell.dead = true;
+      cell.heat = 1;
+      cell.hole = hole;
+      cell.cracks = makeCracks(hole);
+      state.combo++;
+      const mult = Math.min(5, state.combo);
+      const pts = POINTS[cell.level] * mult;
+      state.score += pts;
+      state.alive--;
+      state.hitmarker = 0.3;
+      state.hitKill = true;
+      floaters.push({ x: P.x, y: P.y - 12, text: `+${pts}${mult > 1 ? ` ×${mult}` : ''}`, color: mult > 1 ? '#ffd27a' : '#e6edf3', life: 1.1 });
+      burstParticles(P, LEVEL_COLORS[cell.level], 18, 'chunk');
+      burstParticles(P, '#ffd27a', 10, 'spark');
+      burstParticles(P, '#8b949e', 4, 'smoke');
+      sfx.hit(cell.level);
+      if (state.alive === 0) win();
+      return;
+    }
+    state.combo = 0;
+    decals.push({ gx: (P.x - grid.x) / grid.stride, gy: (P.y - grid.y) / grid.stride, r: rand(0.12, 0.17) });
+    if (decals.length > 160) decals.shift();
+    floaters.push({ x: P.x, y: P.y - 10, text: STR.miss, color: '#7d8590', life: 0.8 });
+    burstParticles(P, '#6e7681', 8, 'dust');
+    sfx.miss();
+  }
+
+  function makeCracks(hole) {
+    const lines = [];
+    const n = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + rand(-0.4, 0.4);
+      const len = rand(0.3, 0.6);
+      lines.push([hole.x, hole.y, hole.x + Math.cos(a + 0.35) * len * 0.5, hole.y + Math.sin(a + 0.35) * len * 0.5, hole.x + Math.cos(a) * len, hole.y + Math.sin(a) * len]);
+    }
+    return lines;
+  }
+
+  function burstParticles(P, color, n, type) {
+    const s = grid.stride / 14;
+    for (let i = 0; i < n; i++) {
+      const a = rand(0, TAU);
+      const sp = (type === 'spark' ? rand(120, 380) : type === 'smoke' ? rand(8, 30) : rand(60, 220)) * s;
+      particles.push({
+        type, color, x: P.x, y: P.y,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (type === 'chunk' ? 90 * s : 0),
+        life: type === 'smoke' ? rand(0.9, 1.5) : type === 'spark' ? rand(0.15, 0.35) : rand(0.5, 0.9),
+        max: 0, size: (type === 'chunk' ? rand(2, 4.5) : type === 'smoke' ? rand(4, 8) : rand(1, 2)) * s,
+        rot: rand(0, TAU), vr: rand(-12, 12),
+      });
+      particles[particles.length - 1].max = particles[particles.length - 1].life;
+    }
+  }
+
+  function win() {
+    state.phase = 'over';
+    sfx.win();
+    const best = Number(store.get(`range.best.${intel.user.toLowerCase()}`)) || 0;
+    const isBest = state.score > best;
+    if (isBest) store.set(`range.best.${intel.user.toLowerCase()}`, String(state.score));
+    setTimeout(() => {
+      $('endTitle').textContent = STR.endTitle;
+      $('endSub').textContent = STR.endSub(intel.user);
+      const [sScore, sTime, sAcc, sBest] = STR.stats;
+      $('stats').innerHTML = `
+        <div class="stat"><span class="muted">${sScore}</span><b>${state.score.toLocaleString(LANG)}</b></div>
+        <div class="stat"><span class="muted">${sTime}</span><b>${fmtTime(state.elapsed)}</b></div>
+        <div class="stat"><span class="muted">${sAcc}</span><b>${accuracy()}%</b></div>
+        <div class="stat best"><span class="muted">${sBest}${isBest ? ` · ${STR.newBest}` : ''}</span><b>${Math.max(best, state.score).toLocaleString(LANG)}</b></div>`;
+      $('end').hidden = false;
+    }, 1100);
+  }
+
+  function reset() {
+    Object.assign(state, { score: 0, shots: 0, hits: 0, combo: 0, elapsed: 0, ammo: MAG, bolt: 0, reload: 0, ejected: true, breath: 1, tired: 0 });
+    particles.length = floaters.length = decals.length = tracers.length = 0;
+    buildCells();
+    renderHud();
+  }
+
+  function start() {
+    sfx.unlock();
+    $('start').hidden = true;
+    $('end').hidden = true;
+    reset();
+    state.phase = 'play';
+    hud.hint.textContent = COARSE ? STR.hintTouch : STR.hint;
+    hud.hint.style.opacity = 1;
+    setTimeout(() => { hud.hint.style.opacity = 0; }, 6000);
+  }
+
+  // --------------------------------------------------------------- rifle ---
+  const RIFLE = [
+    { d: 'M-150,1L-116,9', stroke: '#2d333b', width: 2.6 },
+    { d: 'M8,-6L62,-9L80,-4L80,13L67,15L40,6L14,6Z', fill: '#444c56' },
+    { d: 'M26,-8L58,-11L61,-8L28,-5Z', fill: '#2d333b', noEdge: true },
+    { d: 'M-176,-4h118v5h-118Z', fill: '#2d333b' },
+    { d: 'M-188,-5.5h13v8h-13Z', fill: '#444c56' },
+    { d: 'M-112,-6.5h52v11h-52Z', fill: '#444c56' },
+    { d: 'M-62,-7h72v12h-72Z', fill: '#444c56' },
+    { d: 'M-30,5L-16,5L-14,19L-28,19Z', fill: '#2d333b' },
+    { d: 'M-8,5Q-6,14 4,14L8,5', stroke: '#8b949e', width: 1.5 },
+    { d: 'M6,4L17,4L23,23L12,25Z', fill: '#444c56' },
+    { d: 'M-50,-12h6v6h-6ZM-14,-12h6v6h-6Z', fill: '#2d333b', noEdge: true },
+    { d: 'M-66,-24L-54,-21H-4L6,-23V-13L-4,-15H-54L-66,-12Z', fill: '#2d333b' },
+    { d: 'M-67,-23h2v10h-2Z', fill: '#ff4d4d', noEdge: true },
+  ].map((p) => ({ ...p, path: new Path2D(p.d) }));
+  const BOLT_PATH = new Path2D('M-2,-6L3,-12');
+  const REST_ROT = -6 * (Math.PI / 180);
+
+  function gunGeometry() {
+    const s = clamp(Math.min(W, H) / 560, 0.75, 1.8);
+    const pivot = { x: W - 72 * s, y: H - 44 * s };
+    const P = aimPoint();
+    let raw = Math.atan2(P.y - pivot.y, P.x - pivot.x) - Math.PI;
+    raw = Math.atan2(Math.sin(raw), Math.cos(raw));
+    const deg = (raw * 180) / Math.PI;
+    const rot = REST_ROT + clamp(deg + 6, -10, 75) * 0.62 * (Math.PI / 180) + state.kick * 0.08;
+    const local = (lx, ly) => ({
+      x: pivot.x + (Math.cos(rot) * (lx + state.kick * 12) - Math.sin(rot) * ly) * s,
+      y: pivot.y + (Math.sin(rot) * (lx + state.kick * 12) + Math.cos(rot) * ly) * s,
+    });
+    return { s, pivot, rot, muzzle: local(-190, -1), port: local(-20, -9) };
+  }
+
+  function drawRifle(g) {
+    ctx.save();
+    ctx.translate(g.pivot.x, g.pivot.y);
+    ctx.scale(g.s, g.s);
+    ctx.rotate(g.rot);
+    ctx.translate(state.kick * 12, 0);
+    ctx.lineJoin = 'round';
+    for (const p of RIFLE) {
+      if (p.fill) {
+        ctx.fillStyle = p.fill;
+        ctx.fill(p.path);
+        if (!p.noEdge) { ctx.strokeStyle = '#768390'; ctx.lineWidth = 0.9; ctx.stroke(p.path); }
+      } else {
+        ctx.strokeStyle = p.stroke;
+        ctx.lineWidth = p.width;
+        ctx.lineCap = 'round';
+        ctx.stroke(p.path);
+      }
+    }
+    // bolt handle travels back while chambering
+    const prog = state.bolt > 0 ? 1 - state.bolt / BOLT_TIME : 0;
+    const boltX = state.bolt > 0 ? Math.sin(Math.min(1, prog * 1.4) * Math.PI) * 16 : 0;
+    ctx.save();
+    ctx.translate(boltX, 0);
+    ctx.strokeStyle = '#8b949e';
+    ctx.lineWidth = 2.2;
+    ctx.stroke(BOLT_PATH);
+    ctx.fillStyle = '#8b949e';
+    ctx.beginPath();
+    ctx.arc(4, -13, 2.6, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+    if (state.muzzle > 0) {
+      const glow = ctx.createRadialGradient(-200, -1, 0, -200, -1, 26);
+      glow.addColorStop(0, 'rgba(255,251,230,1)');
+      glow.addColorStop(0.4, 'rgba(255,210,122,.9)');
+      glow.addColorStop(1, 'rgba(255,123,61,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.moveTo(-188, -2);
+      ctx.lineTo(-206, -11);
+      ctx.lineTo(-201, -2);
+      ctx.lineTo(-224, -1);
+      ctx.lineTo(-201, 1);
+      ctx.lineTo(-207, 10);
+      ctx.lineTo(-188, 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-198, -1, 12, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // -------------------------------------------------------------- render ---
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, r);
+    else c.rect(x, y, w, h);
+  }
+
+  function drawBoard(c) {
+    const { stride, size } = grid;
+    const r = Math.max(1.5, size * 0.18);
+    // labels
+    c.fillStyle = '#7d8590';
+    c.font = `${clamp(Math.round(stride * 0.72), 9, 13)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    c.textBaseline = 'middle';
+    const dayNames = LANG === 'ru' ? ['Пн', 'Ср', 'Пт'] : ['Mon', 'Wed', 'Fri'];
+    [1, 3, 5].forEach((row, i) => {
+      if (grid.vertical) { c.textAlign = 'center'; c.fillText(dayNames[i], grid.x + row * stride + size / 2, grid.y - stride * 0.8); }
+      else { c.textAlign = 'right'; c.fillText(dayNames[i], grid.x - stride * 0.5, grid.y + row * stride + size / 2); }
+    });
+    for (const m of monthMarks) {
+      if (grid.vertical) { c.textAlign = 'right'; c.fillText(m.label, grid.x - stride * 0.5, grid.y + m.col * stride + size / 2); }
+      else { c.textAlign = 'left'; c.fillText(m.label, grid.x + m.col * stride, grid.y - stride * 0.8); }
+    }
+    // cells
+    for (const cell of cells) {
+      const { x, y } = cellPos(cell);
+      if (cell.dead) {
+        c.fillStyle = '#1f110c';
+        roundRect(c, x, y, size, size, r);
+        c.fill();
+        const hx = x + cell.hole.x * size, hy = y + cell.hole.y * size;
+        if (cell.heat > 0.01) {
+          const g = c.createRadialGradient(hx, hy, 0, hx, hy, size * 0.7);
+          g.addColorStop(0, `rgba(255,123,61,${0.55 * cell.heat})`);
+          g.addColorStop(1, 'rgba(255,123,61,0)');
+          c.fillStyle = g;
+          c.fillRect(x, y, size, size);
+        }
+        drawCracks(c, cell, x, y, 'rgba(0,0,0,.85)');
+        c.strokeStyle = `rgba(255,123,61,${0.35 + 0.5 * cell.heat})`;
+        c.lineWidth = Math.max(0.8, size * 0.07);
+        c.beginPath();
+        c.arc(hx, hy, size * 0.26, 0, TAU);
+        c.stroke();
+        c.fillStyle = '#010409';
+        c.beginPath();
+        c.arc(hx, hy, size * 0.16, 0, TAU);
+        c.fill();
+      } else {
+        c.fillStyle = LEVEL_COLORS[cell.level];
+        roundRect(c, x, y, size, size, r);
+        c.fill();
+        c.strokeStyle = 'rgba(240,246,252,0.06)';
+        c.lineWidth = 1;
+        c.stroke();
+        if (cell.cracks) {
+          drawCracks(c, cell, x, y, 'rgba(1,4,9,.7)');
+          c.fillStyle = '#010409';
+          c.beginPath();
+          c.arc(x + cell.hole.x * size, y + cell.hole.y * size, size * 0.12, 0, TAU);
+          c.fill();
+        }
+      }
+      if (cell.flash > 0) {
+        c.fillStyle = `rgba(255,251,230,${cell.flash * 0.8})`;
+        roundRect(c, x, y, size, size, r);
+        c.fill();
+      }
+    }
+    // stray bullet holes
+    for (const d of decals) {
+      const x = grid.x + d.gx * stride, y = grid.y + d.gy * stride, rr = d.r * stride;
+      c.fillStyle = 'rgba(139,148,158,.25)';
+      c.beginPath();
+      c.arc(x, y, rr * 1.8, 0, TAU);
+      c.fill();
+      c.fillStyle = '#010409';
+      c.beginPath();
+      c.arc(x, y, rr, 0, TAU);
+      c.fill();
+    }
+  }
+
+  function drawCracks(c, cell, x, y, color) {
+    const s = grid.size;
+    c.save();
+    roundRect(c, x, y, s, s, Math.max(1.5, s * 0.18));
+    c.clip();
+    c.strokeStyle = color;
+    c.lineWidth = Math.max(0.7, s * 0.06);
+    c.beginPath();
+    for (const [x0, y0, x1, y1, x2, y2] of cell.cracks) {
+      c.moveTo(x + x0 * s, y + y0 * s);
+      c.lineTo(x + x1 * s, y + y1 * s);
+      c.lineTo(x + x2 * s, y + y2 * s);
+    }
+    c.stroke();
+    c.restore();
+  }
+
+  function drawFx(c) {
+    for (const p of particles) {
+      if (p.type === 'casing') continue; // drawn above the rifle
+      const k = p.life / p.max;
+      c.globalAlpha = p.type === 'smoke' ? k * 0.35 : Math.min(1, k * 1.6);
+      if (p.type === 'smoke') {
+        c.fillStyle = p.color;
+        c.beginPath();
+        c.arc(p.x, p.y, p.size * (2 - k), 0, TAU);
+        c.fill();
+      } else if (p.type === 'spark') {
+        c.strokeStyle = p.color;
+        c.lineWidth = p.size;
+        c.beginPath();
+        c.moveTo(p.x, p.y);
+        c.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03);
+        c.stroke();
+      } else {
+        c.save();
+        c.translate(p.x, p.y);
+        c.rotate(p.rot);
+        c.fillStyle = p.color;
+        c.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        c.restore();
+      }
+    }
+    c.globalAlpha = 1;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.font = `700 ${clamp(Math.round(grid.stride * 0.95), 11, 18)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    for (const f of floaters) {
+      c.globalAlpha = Math.min(1, f.life * 2);
+      c.fillStyle = f.color;
+      c.fillText(f.text, f.x, f.y);
+    }
+    c.globalAlpha = 1;
+  }
+
+  function drawScope(P) {
+    const R = clamp(Math.min(W, H) * 0.16, 58, 150);
+    // everything outside the scope is dimmed
+    ctx.fillStyle = 'rgba(1,4,9,0.58)';
+    ctx.beginPath();
+    ctx.rect(-40, -40, W + 80, H + 80);
+    ctx.arc(P.x, P.y, R, 0, TAU, true);
+    ctx.fill('evenodd');
+
+    // magnified view
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(P.x, P.y, R, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(P.x - R, P.y - R, R * 2, R * 2);
+    ctx.translate(P.x, P.y);
+    ctx.scale(state.zoom, state.zoom);
+    ctx.translate(-P.x, -P.y);
+    drawBoard(ctx);
+    drawFx(ctx);
+    ctx.restore();
+
+    // lens edge
+    const lens = ctx.createRadialGradient(P.x, P.y, R * 0.55, P.x, P.y, R);
+    lens.addColorStop(0, 'rgba(1,4,9,0)');
+    lens.addColorStop(1, 'rgba(1,4,9,0.55)');
+    ctx.fillStyle = lens;
+    ctx.beginPath();
+    ctx.arc(P.x, P.y, R, 0, TAU);
+    ctx.fill();
+    ctx.lineWidth = 9;
+    ctx.strokeStyle = '#161b22';
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#484f58';
+    ctx.beginPath();
+    ctx.arc(P.x, P.y, R + 4.5, 0, TAU);
+    ctx.stroke();
+
+    // duplex reticle
+    const inner = R * 0.45;
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = 'rgba(201,209,217,.9)';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(P.x - R, P.y); ctx.lineTo(P.x - inner, P.y);
+    ctx.moveTo(P.x + inner, P.y); ctx.lineTo(P.x + R, P.y);
+    ctx.moveTo(P.x, P.y - R); ctx.lineTo(P.x, P.y - inner);
+    ctx.moveTo(P.x, P.y + inner); ctx.lineTo(P.x, P.y + R);
+    ctx.stroke();
+    ctx.strokeStyle = '#ff4d4d';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(P.x - inner, P.y); ctx.lineTo(P.x - 4, P.y);
+    ctx.moveTo(P.x + 4, P.y); ctx.lineTo(P.x + inner, P.y);
+    ctx.moveTo(P.x, P.y - inner); ctx.lineTo(P.x, P.y - 4);
+    ctx.moveTo(P.x, P.y + 4); ctx.lineTo(P.x, P.y + inner);
+    ctx.stroke();
+    ctx.fillStyle = '#ff4d4d';
+    const step = inner / 4;
+    for (let i = 1; i <= 3; i++) {
+      for (const [dx, dy] of [[i, 0], [-i, 0], [0, i], [0, -i]]) {
+        ctx.beginPath();
+        ctx.arc(P.x + dx * step, P.y + dy * step, 1.3, 0, TAU);
+        ctx.fill();
+      }
+    }
+    ctx.beginPath();
+    ctx.arc(P.x, P.y, 1.8, 0, TAU);
+    ctx.fill();
+
+    // hit marker
+    if (state.hitmarker > 0) {
+      ctx.strokeStyle = state.hitKill ? '#ff4d4d' : '#e6edf3';
+      ctx.globalAlpha = Math.min(1, state.hitmarker * 5);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        ctx.moveTo(P.x + sx * 7, P.y + sy * 7);
+        ctx.lineTo(P.x + sx * 14, P.y + sy * 14);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // readouts
+    ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.textBaseline = 'middle';
+    const cell = cellAt(P.x, P.y);
+    const tip = cell ? STR.tip(cell.count, cell.dateLabel) : '';
+    const need = Math.max(ctx.measureText(tip).width, 40) + 12;
+    let tx, ty, align;
+    if (P.x + R * 0.74 + need < W) [tx, ty, align] = [P.x + R * 0.74 + 10, P.y - R * 0.74 - 6, 'left'];
+    else if (P.x - R * 0.74 - need > 0) [tx, ty, align] = [P.x - R * 0.74 - 10, P.y - R * 0.74 - 6, 'right'];
+    else [tx, ty, align] = [clamp(P.x, need / 2, W - need / 2), P.y + R + 18, 'center'];
+    ctx.textAlign = align;
+    ctx.fillStyle = '#7d8590';
+    ctx.fillText(`${state.zoom.toFixed(1)}×`, tx, ty);
+    if (cell) {
+      ctx.fillStyle = cell.dead ? '#ff7b3d' : '#e6edf3';
+      ctx.fillText(tip, tx, ty + 16);
+    }
+  }
+
+  function render() {
+    let sx = 0, sy = 0;
+    if (state.shake > 0.1) { sx = rand(-1, 1) * state.shake; sy = rand(-1, 1) * state.shake; }
+    ctx.setTransform(DPR, 0, 0, DPR, sx * DPR, sy * DPR);
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+    if (dotsLayer) ctx.drawImage(dotsLayer, 0, 0, W, H);
+    drawBoard(ctx);
+    drawFx(ctx);
+
+    const P = aimPoint();
+    const g = gunGeometry();
+    drawScope(P);
+
+    for (const t of tracers) {
+      const k = t.life / 0.1;
+      const grad = ctx.createLinearGradient(t.x1, t.y1, t.x2, t.y2);
+      grad.addColorStop(0, `rgba(255,210,122,${0.1 * k})`);
+      grad.addColorStop(1, `rgba(255,236,190,${0.95 * k})`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(t.x1, t.y1);
+      ctx.lineTo(t.x2, t.y2);
+      ctx.stroke();
+    }
+    drawRifle(g);
+    for (const p of particles) {
+      if (p.type !== 'casing') continue;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = '#d4a73c';
+      ctx.fillRect(-p.size, -p.size * 0.4, p.size * 2, p.size * 0.8);
+      ctx.restore();
+    }
+    if (state.flash > 0) {
+      ctx.fillStyle = `rgba(255,236,190,${state.flash * 0.35})`;
+      ctx.fillRect(-20, -20, W + 40, H + 40);
+    }
+  }
+
+  // -------------------------------------------------------------- update ---
+  function update(dt, now) {
+    // heavy rifle: the scope follows the pointer with some lag
+    const follow = 1 - Math.exp(-dt * (COARSE ? 30 : 13));
+    aim.x += (aim.mx - aim.x) * follow;
+    aim.y += (aim.my - aim.y) * follow;
+
+    // breathing
+    const canHold = state.holding && state.tired <= 0 && state.breath > 0;
+    if (canHold) state.breath = Math.max(0, state.breath - dt / 3.5);
+    else state.breath = Math.min(1, state.breath + dt / (state.tired > 0 ? 6 : 4));
+    if (canHold && state.breath <= 0) state.tired = 2.5;
+    if (state.tired > 0) state.tired -= dt;
+    const target = canHold ? 0.1 : state.tired > 0 ? 1.9 : 1;
+    state.swayAmp += (target - state.swayAmp) * (1 - Math.exp(-dt * 5));
+    const A = grid.stride * 0.6 * state.swayAmp * (COARSE ? 0.3 : 1);
+    aim.sx = A * (Math.sin(now * 1.1) * 0.75 + Math.sin(now * 2.7 + 1.3) * 0.25);
+    aim.sy = A * (Math.sin(now * 1.6 + 0.5) * 0.6 + Math.cos(now * 0.8) * 0.4);
+
+    // recoil spring
+    aim.vx += (-aim.rx * 160 - aim.vx * 18) * dt;
+    aim.vy += (-aim.ry * 160 - aim.vy * 18) * dt;
+    aim.rx += aim.vx * dt;
+    aim.ry += aim.vy * dt;
+
+    if (state.phase === 'play') state.elapsed += dt;
+
+    if (state.bolt > 0) {
+      state.bolt -= dt;
+      if (!state.ejected && state.bolt < BOLT_TIME * 0.6) {
+        state.ejected = true;
+        const g = gunGeometry();
+        particles.push({ type: 'casing', color: '#d4a73c', x: g.port.x, y: g.port.y, vx: rand(80, 170) * g.s, vy: rand(-320, -220) * g.s, life: 1.4, max: 1.4, size: 3.2 * g.s, rot: 0, vr: rand(14, 24), bounced: false });
+      }
+      if (state.bolt <= 0 && state.ammo === 0) startReload();
+    }
+    if (state.reload > 0) {
+      state.reload -= dt;
+      if (state.reload <= 0) { state.reload = 0; state.ammo = MAG; renderHud(); }
+    }
+
+    state.kick = Math.max(0, state.kick - dt * 6);
+    state.muzzle = Math.max(0, state.muzzle - dt);
+    state.flash = Math.max(0, state.flash - dt);
+    state.shake *= Math.exp(-dt * 14);
+    state.hitmarker = Math.max(0, state.hitmarker - dt);
+    if (state.hitmarker === 0) state.hitKill = false;
+
+    for (const cell of cells) {
+      if (cell.flash > 0) cell.flash = Math.max(0, cell.flash - dt * 6);
+      if (cell.heat > 0) cell.heat = Math.max(0, cell.heat - dt * 0.35);
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      const gravity = p.type === 'smoke' ? -20 : p.type === 'spark' ? 300 : 900;
+      p.vy += gravity * (grid.stride / 14) * dt;
+      if (p.type === 'smoke' || p.type === 'dust') { p.vx *= 1 - dt * 3; p.vy *= 1 - dt * 3; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.vr * dt;
+      if (p.type === 'casing' && !p.bounced && p.y > H - 6) {
+        p.bounced = true;
+        p.y = H - 6;
+        p.vy *= -0.35;
+        p.vx *= 0.5;
+        sfx.tink();
+      }
+    }
+    for (let i = floaters.length - 1; i >= 0; i--) {
+      const f = floaters[i];
+      f.life -= dt;
+      f.y -= 26 * dt;
+      if (f.life <= 0) floaters.splice(i, 1);
+    }
+    for (let i = tracers.length - 1; i >= 0; i--) {
+      tracers[i].life -= dt;
+      if (tracers[i].life <= 0) tracers.splice(i, 1);
+    }
+
+    const b = hud.breath;
+    b.firstElementChild.style.transform = `scaleX(${state.breath})`;
+    b.classList.toggle('tired', state.tired > 0);
+    const clock = fmtTime(state.elapsed);
+    if (hud.time.textContent !== clock) hud.time.textContent = clock;
+  }
+
+  let last = performance.now();
+  function frame(t) {
+    const dt = Math.min(0.05, (t - last) / 1000);
+    last = t;
+    update(dt, t / 1000);
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // --------------------------------------------------------------- input ---
+  const pinch = new Map();
+  let pinchStart = 0;
+
+  cv.addEventListener('pointermove', (e) => {
+    aim.seen = true;
+    if (e.pointerType === 'touch') {
+      pinch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch.size === 2) {
+        const [a, b] = [...pinch.values()];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinchStart) state.zoom = clamp(state.zoom * (dist / pinchStart), 1.25, 4.5);
+        pinchStart = dist;
+      }
+      return;
+    }
+    aim.mx = e.clientX;
+    aim.my = e.clientY;
+  });
+  cv.addEventListener('pointerdown', (e) => {
+    aim.seen = true;
+    if (e.pointerType === 'touch') {
+      pinch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch.size > 1) { pinchStart = 0; return; }
+      aim.mx = aim.x = e.clientX;
+      aim.my = aim.y = e.clientY;
+      fire();
+      return;
+    }
+    if (e.button === 0) fire();
+    if (e.button === 2) state.zoom = state.zoom < 3 ? 3.6 : 2.2;
+  });
+  const endTouch = (e) => { pinch.delete(e.pointerId); if (pinch.size < 2) pinchStart = 0; };
+  cv.addEventListener('pointerup', endTouch);
+  cv.addEventListener('pointercancel', endTouch);
+  cv.addEventListener('contextmenu', (e) => e.preventDefault());
+  cv.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    state.zoom = clamp(state.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), 1.25, 4.5);
+  }, { passive: false });
+
+  addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLInputElement) return;
+    if (e.key === 'Shift') state.holding = true;
+    else if (e.code === 'KeyR') startReload();
+    else if (e.code === 'KeyM') sfx.toggle();
+    else if (e.code === 'Space' && state.phase === 'play') { e.preventDefault(); if (!e.repeat) fire(); }
+    else if (e.key === 'Enter' && state.phase !== 'play' && !$('go').disabled) start();
+  });
+  addEventListener('keyup', (e) => { if (e.key === 'Shift') state.holding = false; });
+  addEventListener('blur', () => { state.holding = false; });
+  addEventListener('resize', resize);
+
+  $('go').addEventListener('click', start);
+  $('again').addEventListener('click', start);
+  $('userForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = $('userInput').value.trim().replace(/^@/, '');
+    if (!USER_RE.test(v)) { $('userInput').focus(); return; }
+    location.search = `?user=${encodeURIComponent(v)}`;
+  });
+
+  // ---------------------------------------------------------------- boot ---
+  function setupMenu() {
+    $('subtitle').textContent = STR.subtitle;
+    $('keys').innerHTML = (COARSE ? STR.keysTouch : STR.keys)
+      .map(([k, v]) => `<span>${k.split(' / ').map((x) => `<kbd>${x}</kbd>`).join(' ')}</span><span class="muted">${v}</span>`)
+      .join('');
+    $('go').textContent = STR.go;
+    $('status').textContent = STR.loading;
+    $('userInput').placeholder = STR.userPh;
+    $('again').textContent = STR.again;
+    $('breathLabel').textContent = COARSE ? '' : STR.breath;
+    if (COARSE) $('breath').style.display = 'none';
+  }
+
+  async function boot() {
+    setupMenu();
+    resize();
+    requestAnimationFrame(frame);
+    const data = await loadIntel();
+    Object.assign(intel, data);
+    if (!intel.days.some((d) => d.level > 0)) { intel.days = demoDays(); intel.demo = true; }
+    buildCells();
+    renderHud();
+    const who = `@${intel.user}`;
+    $('who').textContent = who;
+    document.title = `Activity Range · ${who}`;
+    $('intel').textContent = STR.intel(state.targets, intel.total);
+    $('status').textContent = STR.intel(state.targets, intel.total);
+    $('profile').textContent = STR.profile;
+    $('profile').href = `https://github.com/${encodeURIComponent(intel.user)}`;
+    $('note').hidden = !intel.demo;
+    $('note').textContent = STR.demo;
+    $('go').disabled = false;
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
